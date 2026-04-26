@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GreatNotes - Ultimate Optimized Edition</title>
+    <title>GreatNotes - Ultimate Edition</title>
     
     <!-- Tailwind CSS with Absolute Premium Configuration -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,8 +17,7 @@
                     colors: {
                         ios: {
                             blue: '#0A84FF', darkBlue: '#0A84FF',
-                            bg: '#F2F2F7', darkBg: '#000000',
-                            panel: '#FFFFFF', darkPanel: '#1C1C1E',
+                            bg: '#E5E5EA', darkBg: '#000000',
                             text: '#1C1C1E', darkText: '#FFFFFF',
                             subtext: '#8E8E93', darkSubtext: '#98989D'
                         }
@@ -26,7 +25,7 @@
                     boxShadow: {
                         'liquid': '0 12px 48px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255,255,255,0.8)',
                         'liquid-dark': '0 16px 48px rgba(0, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255,255,255,0.15)',
-                        'page': '0 4px 12px rgba(0,0,0,0.05), 0 24px 60px -12px rgba(0,0,0,0.15)',
+                        'page': '0 4px 12px rgba(0,0,0,0.04), 0 24px 60px -12px rgba(0,0,0,0.15)',
                         'page-dark': '0 0 0 1px rgba(255,255,255,0.05), 0 32px 80px -16px rgba(0,0,0,1)'
                     },
                     transitionTimingFunction: {
@@ -46,7 +45,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
-        /* Base Native Behaviors */
+        /* Base Native iPad Behaviors */
         body { 
             overscroll-behavior-y: none; 
             -webkit-user-select: none; user-select: none;
@@ -94,27 +93,18 @@
 
         /* Hardware Accelerated Smooth Zoom */
         #zoom-wrapper {
+            transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             transform-origin: top center;
-            will-change: contents;
+            will-change: transform;
         }
         
-        .page-wrapper { 
-            transform: translateZ(0); 
-            will-change: width, height;
-            transition: width 0.2s ease-out, height 0.2s ease-out;
-        }
-
-        /* Responsive Canvas Scaling */
-        canvas.responsive-layer {
-            width: 100% !important;
-            height: 100% !important;
-        }
+        .page-wrapper { transform: translateZ(0); will-change: contents; }
         
         /* Authentic Highlighter Blending */
         .ink-layer { mix-blend-mode: multiply; }
         
         /* Interactive Spring Animations */
-        .spring-btn { transition: all 0.3s cubic-bezier(0.25, 1.2, 0.5, 1); }
+        .spring-btn { transition: all 0.4s cubic-bezier(0.25, 1.2, 0.5, 1); }
         .spring-btn:active { transform: scale(0.92); }
         
         /* Book Cover Shine */
@@ -152,6 +142,12 @@
         </div>
     </div>
 
+    <!-- GESTURE FEEDBACK TOAST -->
+    <div id="gesture-toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[2000] liquid-glass px-6 py-2 rounded-full opacity-0 pointer-events-none transition-all duration-300 scale-90 flex items-center shadow-lg">
+        <i id="toast-icon" data-lucide="info" class="w-4 h-4 mr-2 text-ios-text dark:text-white"></i>
+        <span id="toast-text" class="text-[15px] font-extrabold tracking-tight text-ios-text dark:text-white">Action</span>
+    </div>
+
     <div id="app" class="flex h-screen w-full relative overflow-hidden">
         
         <!-- ==================== LIBRARY VIEW ==================== -->
@@ -179,7 +175,7 @@
             <!-- Library Main Content -->
             <div class="flex-1 flex flex-col relative overflow-hidden bg-transparent">
                 <div class="absolute top-8 left-8 right-8 z-30 flex justify-between items-center pointer-events-none">
-                    <h1 class="text-[32px] font-extrabold tracking-tight pl-2 pointer-events-auto" id="library-title">All Notes</h1>
+                    <h1 class="text-3xl font-extrabold tracking-tight pl-2 pointer-events-auto text-ios-text dark:text-white" id="library-title">All Notes</h1>
                     
                     <div class="flex items-center space-x-4 pointer-events-auto">
                         <input type="file" id="pdf-upload" accept="application/pdf" class="hidden" onchange="handlePdfUpload(event)">
@@ -194,7 +190,7 @@
                     </div>
                 </div>
 
-                <div id="notebook-grid" class="flex-1 p-10 pt-32 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-12 gap-y-16 overflow-y-auto pb-32">
+                <div id="notebook-grid" class="flex-1 p-10 pt-32 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-12 gap-y-16 overflow-y-auto pb-32">
                     <!-- Populated via JS -->
                 </div>
             </div>
@@ -203,7 +199,7 @@
         <!-- ==================== DOCUMENT VIEW ==================== -->
         <div id="document-view" class="flex flex-col h-full w-full bg-[#E5E5EA] dark:bg-[#000000] absolute inset-0 z-50 translate-y-full transition-transform duration-[600ms] ease-smooth">
             
-            <!-- FLOATING TOP NAVIGATION (Liquid Glass) -->
+            <!-- FLOATING TOP NAVIGATION -->
             <div class="absolute top-6 left-6 right-6 z-40 flex justify-between pointer-events-none">
                 <!-- Left Nav -->
                 <div class="liquid-glass rounded-full p-1.5 flex items-center pointer-events-auto transition-transform spring-btn hover:scale-105">
@@ -216,7 +212,7 @@
                     </button>
                 </div>
 
-                <!-- Center Title (Click to rename) -->
+                <!-- Center Title -->
                 <div class="liquid-glass rounded-full px-6 py-2.5 flex items-center pointer-events-auto cursor-pointer transition-transform spring-btn hover:scale-105 group" onclick="requestRenameNotebook()">
                     <span id="doc-title" class="font-extrabold tracking-tight text-[16px] text-ios-text dark:text-white">Document</span>
                     <i data-lucide="edit-3" class="w-4 h-4 ml-2 text-ios-subtext dark:text-gray-400 group-hover:text-ios-blue transition-colors"></i>
@@ -224,10 +220,9 @@
 
                 <!-- Right Actions -->
                 <div class="liquid-glass rounded-full p-1.5 flex items-center pointer-events-auto space-x-1">
-                    <!-- Zoom -->
                     <div class="flex items-center bg-black/5 dark:bg-white/10 rounded-full px-1 py-1 mr-1">
                         <button onclick="adjustZoom(-0.25)" class="p-1.5 hover:bg-white dark:hover:bg-white/20 rounded-full text-ios-text dark:text-white transition-all spring-btn"><i data-lucide="minus" class="w-4 h-4 stroke-[3]"></i></button>
-                        <span id="zoom-text" class="text-[13px] font-bold w-14 text-center select-none text-ios-text dark:text-white">100%</span>
+                        <span id="zoom-text" class="text-[13px] font-bold w-12 text-center select-none text-ios-text dark:text-white">100%</span>
                         <button onclick="adjustZoom(0.25)" class="p-1.5 hover:bg-white dark:hover:bg-white/20 rounded-full text-ios-text dark:text-white transition-all spring-btn"><i data-lucide="plus" class="w-4 h-4 stroke-[3]"></i></button>
                     </div>
                     
@@ -244,8 +239,8 @@
             <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-40 pointer-events-none">
                 <div class="liquid-glass rounded-[32px] p-2 flex items-center pointer-events-auto space-x-2">
                     
-                    <!-- Pencil Mode Toggle -->
-                    <button id="btn-stylus-mode" onclick="toggleStylusMode()" class="p-3.5 rounded-[24px] transition-all spring-btn" title="Apple Pencil Mode">
+                    <!-- Stylus Mode -->
+                    <button id="btn-stylus-mode" onclick="toggleStylusMode()" class="p-3.5 rounded-[24px] transition-all spring-btn" title="Apple Pencil Only Mode">
                         <i data-lucide="pen-line" class="w-6 h-6 stroke-[2.5]"></i>
                     </button>
                     <div class="w-px h-8 bg-black/10 dark:bg-white/20 mx-1"></div>
@@ -278,33 +273,38 @@
 
                     <div class="w-px h-8 bg-black/10 dark:bg-white/20 mx-2"></div>
 
-                    <!-- Actions -->
-                    <button onclick="undoLastStroke()" class="p-3.5 rounded-full text-ios-subtext hover:text-ios-text dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all spring-btn" title="Undo">
-                        <i data-lucide="undo-2" class="w-[22px] h-[22px] stroke-[2.5]"></i>
-                    </button>
-                    <button onclick="requestClearCurrentPage()" class="p-3.5 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/20 transition-all spring-btn mr-1" title="Clear Ink">
-                        <i data-lucide="trash-2" class="w-[22px] h-[22px] stroke-[2.5]"></i>
-                    </button>
+                    <!-- Advanced Actions -->
+                    <div class="flex items-center space-x-1">
+                        <button onclick="undoLastStroke()" class="p-3.5 rounded-full text-ios-text dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all spring-btn" title="Undo (2-Finger Tap)">
+                            <i data-lucide="undo-2" class="w-[22px] h-[22px] stroke-[2.5]"></i>
+                        </button>
+                        <button onclick="redoLastStroke()" class="p-3.5 rounded-full text-ios-text dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all spring-btn" title="Redo (3-Finger Tap)">
+                            <i data-lucide="redo-2" class="w-[22px] h-[22px] stroke-[2.5]"></i>
+                        </button>
+                        <button onclick="requestClearCurrentPage()" class="p-3.5 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 transition-all spring-btn ml-1" title="Clear Page">
+                            <i data-lucide="trash-2" class="w-[22px] h-[22px] stroke-[2.5]"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Workspace Body -->
-            <div class="flex flex-1 overflow-hidden relative pt-[72px]"> 
+            <div class="flex flex-1 overflow-hidden relative"> 
                 
                 <!-- Slide-over Sidebar Thumbnails -->
-                <div id="sidebar" class="absolute top-0 bottom-0 left-0 w-72 bg-ios-panel/95 dark:bg-ios-darkPanel/95 liquid-glass-heavy border-r border-black/5 dark:border-white/10 flex flex-col z-30 transform transition-transform duration-500 ease-smooth shadow-2xl">
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10 mt-20">
-                        <span class="font-bold text-[12px] uppercase tracking-widest text-ios-subtext">Pages</span>
-                        <button onclick="toggleSidebar()" class="p-1.5 bg-black/5 dark:bg-white/10 rounded-full text-ios-subtext hover:text-ios-text transition-colors spring-btn"><i data-lucide="x" class="w-4 h-4 stroke-[3]"></i></button>
+                <div id="sidebar" class="absolute top-0 bottom-0 left-0 w-72 bg-ios-panel/95 dark:bg-ios-darkPanel/95 liquid-glass-heavy border-r border-black/5 dark:border-white/10 flex flex-col z-30 transform transition-transform duration-500 ease-smooth shadow-2xl pt-[100px]">
+                    <div class="flex items-center justify-between px-6 py-3 border-b border-black/5 dark:border-white/10">
+                        <span class="font-extrabold text-[12px] uppercase tracking-widest text-ios-subtext dark:text-gray-400">Pages</span>
+                        <button onclick="toggleSidebar()" class="p-1.5 bg-black/5 dark:bg-white/10 rounded-full text-ios-text dark:text-white hover:bg-black/10 transition-colors spring-btn"><i data-lucide="x" class="w-4 h-4 stroke-[3]"></i></button>
                     </div>
-                    <div id="sidebar-thumbnails" class="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+                    <div id="sidebar-thumbnails" class="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide">
                         <!-- Populated via JS -->
                     </div>
                 </div>
 
-                <!-- Zoomable, Scrollable Viewport -->
-                <div id="canvas-viewport" class="flex-1 overflow-y-auto overflow-x-auto relative flex justify-center w-full">
-                    <div id="zoom-wrapper" class="flex flex-col items-center py-6 space-y-12 min-w-full pb-48"> 
+                <!-- Scrollable Viewport -->
+                <div id="canvas-viewport" class="flex-1 overflow-y-auto overflow-x-auto relative flex justify-center w-full pt-[100px]">
+                    <div id="zoom-wrapper" class="flex flex-col items-center py-6 space-y-14 min-w-full pb-48"> 
                         <!-- Pages Populated Here -->
                     </div>
                 </div>
@@ -314,7 +314,7 @@
     </div>
 
     <script>
-        // --- Core Libraries ---
+        // --- Libraries ---
         const pdfjsLib = window['pdfjs-dist/build/pdf'];
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         const { jsPDF } = window.jspdf;
@@ -362,6 +362,12 @@
         let canvasObserver = null;
         let lastPressure = 0.5;
 
+        // Gesture Variables
+        let touchStartFingers = 0;
+        let touchStartTime = 0;
+        let gestureHandled = false;
+        let toastTimeout;
+
         // --- Boot Sequence ---
         function init() {
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -373,29 +379,26 @@
 
             // Default Mock Data
             notebooks.push({
-                id: 'nb_1', title: 'Product Design Specs', cover: COVERS[0], isFavorite: true, isTrashed: false,
-                pages: [{ id: 'p1', paths: [], paperType: 'grid', bgImage: null, width: PAGE_WIDTH, height: 1100 }]
+                id: 'nb_1', title: 'Machine Learning', cover: COVERS[0], isFavorite: true, isTrashed: false,
+                pages: [{ id: 'p1', paths: [], redoPaths: [], paperType: 'grid', bgImage: null, width: PAGE_WIDTH, height: 1100 }]
             });
             notebooks.push({
                 id: 'nb_2', title: 'Daily Journal', cover: COVERS[3], isFavorite: false, isTrashed: false,
-                pages: [{ id: 'p1', paths: [], paperType: 'ruled', bgImage: null, width: PAGE_WIDTH, height: 1100 }]
+                pages: [{ id: 'p1', paths: [], redoPaths: [], paperType: 'ruled', bgImage: null, width: PAGE_WIDTH, height: 1100 }]
             });
             
             renderLibrary();
             setTool('pen');
             updateStylusModeUI();
             
-            // Set initial transforms for animations
             document.getElementById('document-view').style.transform = 'translateY(100%)';
             document.getElementById('sidebar').style.transform = 'translateX(-100%)';
             setView('library'); 
         }
 
         // --- Theme Engine ---
-        function toggleTheme(forceDark = null) {
-            if (forceDark !== null) isDarkMode = forceDark;
-            else isDarkMode = !isDarkMode;
-            
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
             if (isDarkMode) {
                 document.documentElement.classList.add('dark');
                 document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
@@ -405,10 +408,26 @@
             }
             lucide.createIcons();
             updateToolbar(); 
-            if(activeTabId) buildContinuousDocument(); // Re-render for border adjustments
+            if(activeTabId) highlightThumbnail(activePageIndex); 
         }
 
-        // --- Advanced Modal Controller ---
+        // --- Custom Toast / Modals ---
+        function showToast(text, icon = 'info') {
+            const toast = document.getElementById('gesture-toast');
+            document.getElementById('toast-text').innerText = text;
+            document.getElementById('toast-icon').setAttribute('data-lucide', icon);
+            lucide.createIcons();
+            
+            toast.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'scale-100');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'scale-100');
+                toast.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
+            }, 1200);
+        }
+
         function showModal(title, message, confirmText, isDestructive, onConfirm, showInput = false, defaultInput = "") {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-message').innerText = message;
@@ -440,7 +459,6 @@
             const modal = document.getElementById('custom-modal');
             const content = document.getElementById('custom-modal-content');
             modal.classList.add('active');
-            
             setTimeout(() => {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
                 content.classList.remove('scale-90');
@@ -495,7 +513,7 @@
                 sidebarOpen = false;
                 document.getElementById('sidebar').style.transform = 'translateX(-100%)';
             } else {
-                libView.style.transform = 'translateY(-5%) scale(0.95)'; // Deep parallax effect back
+                libView.style.transform = 'translateY(-5%) scale(0.95)'; // Parallax
                 docView.style.zIndex = '50';
                 docView.style.transform = 'translateY(0)'; 
                 setZoom(1.0);
@@ -513,7 +531,6 @@
         // --- Library Logic & Filtering ---
         function setLibraryFilter(filter) {
             libraryFilter = filter;
-            
             ['all', 'favorites', 'trash'].forEach(f => {
                 const btn = document.getElementById(`nav-${f}`);
                 if(f === filter) {
@@ -527,7 +544,6 @@
 
             const titleObj = { 'all': 'All Notes', 'favorites': 'Favorites', 'trash': 'Trash' };
             document.getElementById('library-title').innerText = titleObj[filter];
-            
             renderLibrary();
         }
 
@@ -541,27 +557,26 @@
             else filteredNbs = notebooks.filter(n => !n.isTrashed);
 
             if(filteredNbs.length === 0) {
-                grid.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center pt-20 text-ios-subtext opacity-60"><i data-lucide="${libraryFilter==='trash'?'trash':'book'}" class="w-16 h-16 mb-4"></i><p class="text-lg font-bold">Nothing here</p></div>`;
+                grid.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center pt-24 text-ios-subtext opacity-60"><i data-lucide="${libraryFilter==='trash'?'trash-2':'book-open'}" class="w-20 h-20 mb-4"></i><p class="text-xl font-bold">Nothing here</p></div>`;
                 lucide.createIcons();
                 return;
             }
 
             filteredNbs.forEach(nb => {
                 const item = document.createElement('div');
-                item.className = 'flex flex-col items-center cursor-pointer group relative transition-all spring-btn';
-                
+                item.className = 'flex flex-col items-center cursor-pointer group relative spring-btn animate-pop';
                 if (!nb.isTrashed) item.onclick = () => openNotebook(nb.id);
-                
+
                 let hoverActions = '';
                 if (nb.isTrashed) {
                     hoverActions = `
-                        <button onclick="event.stopPropagation(); restoreNotebook('${nb.id}')" class="bg-white/90 dark:bg-black/80 p-3 rounded-full text-ios-blue hover:scale-110 transition-transform shadow-lg"><i data-lucide="rotate-ccw" class="w-5 h-5"></i></button>
-                        <button onclick="event.stopPropagation(); requestDeleteNotebook('${nb.id}', '${nb.title}')" class="bg-white/90 dark:bg-black/80 p-3 rounded-full text-red-500 hover:scale-110 transition-transform shadow-lg"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                        <button onclick="event.stopPropagation(); restoreNotebook('${nb.id}')" class="bg-white/90 dark:bg-black/80 p-3.5 rounded-full text-ios-blue hover:scale-110 transition-transform shadow-lg"><i data-lucide="rotate-ccw" class="w-[22px] h-[22px] stroke-[2.5]"></i></button>
+                        <button onclick="event.stopPropagation(); requestDeleteNotebook('${nb.id}', '${nb.title}')" class="bg-white/90 dark:bg-black/80 p-3.5 rounded-full text-red-500 hover:scale-110 transition-transform shadow-lg"><i data-lucide="trash-2" class="w-[22px] h-[22px] stroke-[2.5]"></i></button>
                     `;
                 } else {
                     hoverActions = `
-                        <button onclick="event.stopPropagation(); toggleFavorite('${nb.id}')" class="bg-white/90 dark:bg-black/80 p-3 rounded-full ${nb.isFavorite ? 'text-yellow-500' : 'text-ios-subtext'} hover:scale-110 transition-transform shadow-lg"><i data-lucide="star" class="${nb.isFavorite ? 'fill-yellow-500' : ''} w-5 h-5"></i></button>
-                        <button onclick="event.stopPropagation(); moveToTrash('${nb.id}')" class="bg-white/90 dark:bg-black/80 p-3 rounded-full text-ios-subtext hover:text-red-500 hover:scale-110 transition-transform shadow-lg"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                        <button onclick="event.stopPropagation(); toggleFavorite('${nb.id}')" class="bg-white/90 dark:bg-black/80 p-3.5 rounded-full ${nb.isFavorite ? 'text-yellow-500' : 'text-ios-text dark:text-white'} hover:scale-110 transition-transform shadow-lg"><i data-lucide="star" class="${nb.isFavorite ? 'fill-yellow-500' : ''} w-[22px] h-[22px] stroke-[2.5]"></i></button>
+                        <button onclick="event.stopPropagation(); moveToTrash('${nb.id}')" class="bg-white/90 dark:bg-black/80 p-3.5 rounded-full text-red-500 hover:scale-110 transition-transform shadow-lg"><i data-lucide="trash-2" class="w-[22px] h-[22px] stroke-[2.5]"></i></button>
                     `;
                 }
 
@@ -571,7 +586,7 @@
                 bookUI.innerHTML = `
                     <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/40 via-black/10 to-transparent mix-blend-overlay"></div>
                     <div class="absolute left-6 top-0 bottom-0 w-px bg-white/30"></div>
-                    <div class="bg-white/95 dark:bg-[#1C1C1E]/95 px-4 py-3.5 rounded-[12px] shadow-liquid dark:shadow-liquid-dark w-[80%] text-center font-extrabold text-[16px] text-ios-text dark:text-white overflow-hidden backdrop-blur-xl z-10">
+                    <div class="bg-white/95 dark:bg-[#1C1C1E]/95 px-4 py-3.5 rounded-[12px] shadow-liquid dark:shadow-liquid-dark w-[80%] text-center font-extrabold text-[16px] text-ios-text dark:text-white overflow-hidden backdrop-blur-xl z-10 border border-white/50 dark:border-white/10">
                         <span class="truncate block w-full tracking-tight">${nb.title}</span>
                     </div>
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 flex items-center justify-center space-x-4 backdrop-blur-sm">
@@ -583,7 +598,7 @@
                 labelUI.className = 'mt-6 text-center px-2 w-full';
                 labelUI.innerHTML = `
                     <span class="block text-[16px] font-bold truncate w-full tracking-tight text-ios-text dark:text-white flex items-center justify-center">
-                        ${nb.isFavorite ? '<i data-lucide="star" class="w-3 h-3 fill-yellow-500 text-yellow-500 mr-1.5"></i>' : ''} ${nb.title}
+                        ${nb.isFavorite ? '<i data-lucide="star" class="w-3.5 h-3.5 fill-yellow-500 text-yellow-500 mr-1.5"></i>' : ''} ${nb.title}
                     </span>
                     <span class="text-[13px] font-bold text-ios-subtext dark:text-ios-darkSubtext mt-1.5 block">${nb.pages.length} Page${nb.pages.length !== 1 ? 's' : ''}</span>
                 `;
@@ -622,7 +637,7 @@
                 notebooks.unshift({ 
                     id: nbId, title: title, cover: COVERS[Math.floor(Math.random() * COVERS.length)],
                     isFavorite: false, isTrashed: false,
-                    pages: [{ id: `p_${Date.now()}`, paths: [], paperType: 'ruled', bgImage: null, width: PAGE_WIDTH, height: 1100 }]
+                    pages: [{ id: `p_${Date.now()}`, paths: [], redoPaths: [], paperType: 'ruled', bgImage: null, width: PAGE_WIDTH, height: 1100 }]
                 });
                 setLibraryFilter('all');
                 openNotebook(nbId);
@@ -646,10 +661,21 @@
             setView('document'); 
         }
 
+        function closeTab(id) {
+            openTabs = openTabs.filter(t => t !== id);
+            if (activeTabId === id) {
+                if (openTabs.length > 0) {
+                    activeTabId = openTabs[openTabs.length - 1];
+                    updateDocumentUI();
+                } else setView('library');
+            } else renderTabs(); 
+        }
+
         function requestDeleteNotebook(id, title) {
             showModal("Delete Permanently", `Are you sure you want to permanently delete "${title}"? This cannot be undone.`, "Delete", true, () => {
                 notebooks = notebooks.filter(n => n.id !== id);
-                renderLibrary();
+                if (activeTabId === id) setView('library');
+                else renderLibrary();
             });
         }
 
@@ -673,6 +699,7 @@
 
             showModal("Clear Page", `Erase all ink from Page ${activePageIndex + 1}?`, "Erase Ink", true, () => {
                 nb.pages[activePageIndex].paths = []; 
+                nb.pages[activePageIndex].redoPaths = [];
                 redrawPage(activePageIndex);
             });
         }
@@ -701,7 +728,7 @@
             const refPage = nb.pages[nb.pages.length - 1];
             
             nb.pages.push({ 
-                id: `p_${Date.now()}`, paths: [], paperType: type, bgImage: null, 
+                id: `p_${Date.now()}`, paths: [], redoPaths: [], paperType: type, bgImage: null, 
                 width: refPage ? refPage.width : PAGE_WIDTH, height: refPage ? refPage.height : 1100 
             });
             
@@ -716,6 +743,34 @@
             document.querySelector('#custom-modal-content .flex').querySelector('button').classList.remove('w-full', 'rounded-b-[24px]');
         }
 
+        // --- Undo / Redo Engine ---
+        function undoLastStroke() {
+            const nb = notebooks.find(n => n.id === activeTabId);
+            if (!nb || activePageIndex === null) return;
+            const page = nb.pages[activePageIndex];
+            
+            if (page && page.paths.length > 0) {
+                const undonePath = page.paths.pop(); 
+                if(!page.redoPaths) page.redoPaths = [];
+                page.redoPaths.push(undonePath);
+                redrawPage(activePageIndex);
+                showToast("Undo", "undo-2");
+            }
+        }
+
+        function redoLastStroke() {
+            const nb = notebooks.find(n => n.id === activeTabId);
+            if (!nb || activePageIndex === null) return;
+            const page = nb.pages[activePageIndex];
+            
+            if (page && page.redoPaths && page.redoPaths.length > 0) {
+                const redonePath = page.redoPaths.pop();
+                page.paths.push(redonePath);
+                redrawPage(activePageIndex);
+                showToast("Redo", "redo-2");
+            }
+        }
+
         // --- Stylus & Touch Logic ---
         function toggleStylusMode() {
             stylusOnlyMode = !stylusOnlyMode;
@@ -725,13 +780,16 @@
         function updateStylusModeUI() {
             const btn = document.getElementById('btn-stylus-mode');
             if (stylusOnlyMode) {
-                btn.className = 'p-3.5 rounded-[24px] transition-all spring-btn bg-ios-blue text-white shadow-lg shadow-ios-blue/30';
+                btn.className = 'p-3.5 rounded-full transition-all spring-btn bg-ios-blue text-white shadow-lg shadow-ios-blue/30';
             } else {
-                btn.className = 'p-3.5 rounded-[24px] transition-all spring-btn bg-black/5 dark:bg-white/10 text-ios-text dark:text-white hover:bg-black/10 dark:hover:bg-white/20';
+                btn.className = 'p-3.5 rounded-full transition-all spring-btn bg-black/5 dark:bg-white/10 text-ios-text dark:text-white hover:bg-black/10 dark:hover:bg-white/20';
             }
         }
 
         function preventScrollIfDrawing(e) {
+            // Allows gesture detector to work by not entirely blocking touches if 2+ fingers
+            if (e.touches.length >= 2) return; 
+
             if (stylusOnlyMode) {
                 let isFinger = false;
                 if (e.touches) {
@@ -739,12 +797,12 @@
                         if (e.touches[i].touchType !== 'stylus') isFinger = true;
                     }
                 }
-                if (isFinger) return; 
+                if (isFinger) return; // Finger can scroll
             }
             if(e.cancelable) e.preventDefault(); 
         }
 
-        // --- Hardware Accelerated Zoom Logic ---
+        // --- Zoom Logic ---
         function adjustZoom(delta) {
             let newZoom = zoomLevel + delta;
             newZoom = Math.max(0.5, Math.min(newZoom, 3.0)); 
@@ -755,8 +813,6 @@
             zoomLevel = level;
             document.getElementById('zoom-text').innerText = `${Math.round(zoomLevel * 100)}%`;
             
-            // Adjust wrapper CSS dimensions. Because canvas internal pixels stay fixed, 
-            // this is instantly GPU accelerated without redrawing.
             const nb = notebooks.find(n => n.id === activeTabId);
             if (!nb) return;
             
@@ -772,6 +828,7 @@
         // --- Toolbar UI Updates ---
         function setTool(tool) {
             currentTool = tool;
+            
             if (tool === 'pen') {
                 if (!PALETTES.pen.includes(activeColor)) activeColor = PALETTES.pen[0];
                 if (!SIZES.pen.includes(activeSize)) activeSize = SIZES.pen[1];
@@ -853,6 +910,31 @@
             buildContinuousDocument();
             renderSidebarThumbnails(); 
             lucide.createIcons(); 
+        }
+
+        function renderTabs() {
+            const container = document.getElementById('tabs-container');
+            container.innerHTML = '';
+            
+            openTabs.forEach(id => {
+                const nb = notebooks.find(n => n.id === id);
+                if (!nb) return;
+                const isActive = activeTabId === id;
+                
+                const tab = document.createElement('div');
+                tab.className = `flex items-center px-4 h-[44px] rounded-t-[16px] border border-b-0 cursor-pointer min-w-[140px] max-w-[220px] transition-colors ${
+                    isActive ? 'bg-white dark:bg-[#2C2C2E] border-gray-300/80 dark:border-white/10 z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.02)]' : 'bg-transparent border-transparent hover:bg-gray-200/50 dark:hover:bg-white/5'
+                }`;
+                tab.onclick = () => { activeTabId = id; updateDocumentUI(); };
+                
+                tab.innerHTML = `
+                    <span class="text-[14px] truncate font-bold w-full tracking-tight ${isActive ? 'text-ios-blue dark:text-ios-darkBlue' : 'text-gray-500 dark:text-gray-400'}">${nb.title}</span>
+                    <button onclick="event.stopPropagation(); closeTab('${id}')" class="ml-3 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full p-1 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4 stroke-[2.5]"></i>
+                    </button>
+                `;
+                container.appendChild(tab);
+            });
         }
 
         function renderSidebarThumbnails() {
@@ -939,29 +1021,22 @@
             nb.pages.forEach((page, index) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'page-wrapper relative flex-shrink-0 page-shadow dark:shadow-page-dark rounded-md bg-[#FFFFFF] overflow-hidden'; 
-                // Set CSS dimensions for zoom wrapper logic
                 wrapper.style.width = `${page.width * zoomLevel}px`;
                 wrapper.style.height = `${page.height * zoomLevel}px`;
                 wrapper.setAttribute('data-page-index', index);
                 wrapper.id = `page-wrapper-${index}`;
 
-                // Absolute responsive sizing for inner canvases (keeps physical buffer intact)
-                const canvasClasses = 'responsive-layer absolute inset-0 rounded-md';
-
-                // 1. PDF Background
                 const bgCanvas = document.createElement('canvas');
                 bgCanvas.id = `bg-canvas-${index}`;
-                bgCanvas.className = `${canvasClasses} z-0`;
+                bgCanvas.className = 'absolute inset-0 w-full h-full z-0 rounded-md';
 
-                // 2. Saved Ink
                 const drawingCanvas = document.createElement('canvas');
                 drawingCanvas.id = `drawing-canvas-${index}`;
-                drawingCanvas.className = `${canvasClasses} z-10 ink-layer pointer-events-none`;
+                drawingCanvas.className = 'absolute inset-0 w-full h-full z-10 ink-layer rounded-md pointer-events-none';
                 
-                // 3. Active Layer (Catches Touch)
                 const activeCanvas = document.createElement('canvas');
                 activeCanvas.id = `active-canvas-${index}`;
-                activeCanvas.className = `${canvasClasses} z-20 cursor-crosshair ink-layer`;
+                activeCanvas.className = 'absolute inset-0 w-full h-full z-20 cursor-crosshair ink-layer rounded-md';
                 
                 bindCanvasEvents(activeCanvas, drawingCanvas, index);
 
@@ -977,14 +1052,12 @@
             });
         }
 
-        // --- Premium Layer Rendering Engine ---
+        // --- Layer Rendering Engine ---
         function setupCanvasDimensions(page, bgCanvas, drawingCanvas, activeCanvas) {
-            // Safety cap DPR to avoid Safari memory limits on massive PDFs
-            const dpr = Math.min(window.devicePixelRatio || 2, 2);
+            const dpr = Math.min(window.devicePixelRatio || 2, 2); // Cap at 2x for memory efficiency on massive PDFs
             const physicalWidth = page.width * dpr;
             const physicalHeight = page.height * dpr;
 
-            // Maintain fixed physical buffers
             bgCanvas.width = physicalWidth; bgCanvas.height = physicalHeight;
             drawingCanvas.width = physicalWidth; drawingCanvas.height = physicalHeight;
             activeCanvas.width = physicalWidth; activeCanvas.height = physicalHeight;
@@ -1032,6 +1105,7 @@
 
         function drawPaperTemplate(ctx, width, height, type) {
             ctx.lineWidth = 1;
+            
             if (type === 'ruled') {
                 ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
                 ctx.beginPath();
@@ -1064,7 +1138,7 @@
 
             if (path.tool === 'highlighter') {
                 ctx.globalCompositeOperation = 'source-over';
-                ctx.globalAlpha = 0.65; // CSS 'multiply' handles realism
+                ctx.globalAlpha = 0.65; 
                 ctx.strokeStyle = path.color;
                 ctx.lineWidth = path.width;
                 
@@ -1105,7 +1179,6 @@
                     ctx.fillStyle = path.color; ctx.fill(); return;
                 }
 
-                // Bezier smoothed pen with pressure
                 if (path.points.length > 2) {
                     ctx.beginPath();
                     ctx.moveTo(path.points[0].x, path.points[0].y);
@@ -1135,17 +1208,12 @@
             ctx.globalAlpha = 1.0;
         }
 
-        // --- Hardware Interaction Handlers ---
+        // --- Multi-Touch Gesture & Hardware Handlers ---
         function getCoordinates(e, canvas) {
             const rect = canvas.getBoundingClientRect();
-            // Logic: CSS zoom applies visually, so we must calculate the ratio
-            // of logical page width to the visual rect width.
-            const nb = notebooks.find(n => n.id === activeTabId);
-            const logicalWidth = nb.pages[activePageIndexForDrawing !== null ? activePageIndexForDrawing : activePageIndex].width;
-            const logicalHeight = nb.pages[activePageIndexForDrawing !== null ? activePageIndexForDrawing : activePageIndex].height;
-            
-            const scaleX = logicalWidth / rect.width;
-            const scaleY = logicalHeight / rect.height;
+            const dpr = Math.min(window.devicePixelRatio || 2, 2);
+            const scaleX = (canvas.width / dpr) / rect.width;
+            const scaleY = (canvas.height / dpr) / rect.height;
 
             return {
                 x: (e.clientX - rect.left) * scaleX,
@@ -1156,10 +1224,48 @@
 
         function bindCanvasEvents(activeCanvas, drawingCanvas, pageIndex) {
             
-            activeCanvas.addEventListener('touchstart', preventScrollIfDrawing, { passive: false });
-            activeCanvas.addEventListener('touchmove', preventScrollIfDrawing, { passive: false });
+            // GESTURE & PALM REJECTION LOGIC
+            activeCanvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length >= 2) {
+                    // Multi-touch started (gestures)
+                    touchStartFingers = e.touches.length;
+                    touchStartTime = Date.now();
+                    gestureHandled = false;
+                    
+                    // Immediately cancel any drawing stroke
+                    if (isDrawing) {
+                        isDrawing = false;
+                        strokePoints = [];
+                        const actCtx = activeCanvas.getContext('2d');
+                        actCtx.clearRect(0, 0, activeCanvas.width, activeCanvas.height);
+                    }
+                    if(e.cancelable) e.preventDefault(); 
+                    return;
+                }
+                preventScrollIfDrawing(e);
+            }, { passive: false });
 
+            activeCanvas.addEventListener('touchmove', (e) => {
+                if (e.touches.length >= 2) { if(e.cancelable) e.preventDefault(); return; }
+                preventScrollIfDrawing(e);
+            }, { passive: false });
+            
+            activeCanvas.addEventListener('touchend', (e) => {
+                if (!gestureHandled && touchStartFingers >= 2) {
+                    const duration = Date.now() - touchStartTime;
+                    if (duration < 400 && e.touches.length === 0) { // Quick Tap
+                        if (touchStartFingers === 2) undoLastStroke();
+                        if (touchStartFingers === 3) redoLastStroke();
+                        gestureHandled = true;
+                    }
+                }
+                if (e.touches.length === 0) touchStartFingers = 0;
+            });
+
+            // DRAWING LOGIC
             activeCanvas.addEventListener('pointerdown', (e) => {
+                // Ignore if it's part of a multi-touch gesture
+                if (touchStartFingers >= 2) return;
                 if (stylusOnlyMode && e.pointerType !== 'pen') return; 
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
                 
@@ -1189,6 +1295,7 @@
             });
 
             activeCanvas.addEventListener('pointermove', (e) => {
+                if (touchStartFingers >= 2) return;
                 if (stylusOnlyMode && e.pointerType !== 'pen') return;
                 if (!isDrawing || currentActiveCanvas !== activeCanvas) return;
                 
@@ -1198,7 +1305,6 @@
                 const dist = Math.hypot(coords.x - lastPoint.x, coords.y - lastPoint.y);
                 if (dist < (1.0 / zoomLevel)) return; 
 
-                // Low pass filter on pressure
                 coords.pressure = (lastPressure * 0.7) + (coords.pressure * 0.3);
                 lastPressure = coords.pressure;
 
@@ -1215,8 +1321,8 @@
                     drawCtx.stroke();
                 } else {
                     const actCtx = activeCanvas.getContext('2d');
-                    const physicalWidth = activeCanvas.width / (window.devicePixelRatio || 2);
-                    const physicalHeight = activeCanvas.height / (window.devicePixelRatio || 2);
+                    const physicalWidth = activeCanvas.width / (Math.min(window.devicePixelRatio || 2, 2));
+                    const physicalHeight = activeCanvas.height / (Math.min(window.devicePixelRatio || 2, 2));
                     actCtx.clearRect(0, 0, physicalWidth, physicalHeight);
                     renderPathOnContext(actCtx, { tool: currentTool, color: activeColor, width: activeSize, points: strokePoints });
                 }
@@ -1234,6 +1340,7 @@
                     
                     if (nb && nb.pages[activePageIndexForDrawing]) {
                         nb.pages[activePageIndexForDrawing].paths.push(pathObj);
+                        nb.pages[activePageIndexForDrawing].redoPaths = []; // Clear redo stack on new action
                     }
                     if (currentTool !== 'eraser') {
                         const drawCtx = currentDrawingCanvas.getContext('2d');
@@ -1242,8 +1349,8 @@
                 }
                 
                 const actCtx = activeCanvas.getContext('2d');
-                const physicalWidth = activeCanvas.width / (window.devicePixelRatio || 2);
-                const physicalHeight = activeCanvas.height / (window.devicePixelRatio || 2);
+                const physicalWidth = activeCanvas.width / (Math.min(window.devicePixelRatio || 2, 2));
+                const physicalHeight = activeCanvas.height / (Math.min(window.devicePixelRatio || 2, 2));
                 actCtx.clearRect(0, 0, physicalWidth, physicalHeight);
 
                 strokePoints = [];
@@ -1255,17 +1362,6 @@
             activeCanvas.addEventListener('pointerup', stopHandler);
             activeCanvas.addEventListener('pointerout', stopHandler);
             activeCanvas.addEventListener('pointercancel', stopHandler);
-        }
-
-        function undoLastStroke() {
-            const nb = notebooks.find(n => n.id === activeTabId);
-            if (!nb || activePageIndex === null) return;
-            const page = nb.pages[activePageIndex];
-            
-            if (page && page.paths.length > 0) {
-                page.paths.pop(); 
-                redrawPage(activePageIndex);
-            }
         }
 
         // --- PDF Import / Export ---
@@ -1301,7 +1397,7 @@
                     
                     newPages.push({
                         id: `page_${Date.now()}_${i}`,
-                        paths: [], paperType: 'blank',
+                        paths: [], redoPaths: [], paperType: 'blank',
                         bgImage: tempCanvas.toDataURL('image/jpeg', 0.85), 
                         width: viewport.width, height: viewport.height 
                     });
@@ -1377,7 +1473,9 @@
 
         window.addEventListener('keydown', (e) => {
             if (view !== 'document') return;
-            if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undoLastStroke(); }
+            if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === 'z') { e.preventDefault(); undoLastStroke(); }
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'z') { e.preventDefault(); redoLastStroke(); }
+            if ((e.metaKey || e.ctrlKey) && e.key === 'y') { e.preventDefault(); redoLastStroke(); }
             if (!e.metaKey && !e.ctrlKey) {
                 if (e.key.toLowerCase() === 'p') setTool('pen');
                 if (e.key.toLowerCase() === 'h') setTool('highlighter');
@@ -1389,5 +1487,6 @@
     </script>
 </body>
 </html>
+
 
 
