@@ -84,7 +84,9 @@
         .overlay.active { display: flex; }
 
         #canvas-viewport { scroll-behavior: smooth; touch-action: pan-x pan-y; }
-        .page-wrapper { transform: translateZ(0); will-change: contents; transition: width 0.3s ease, height 0.3s ease, background-color 0.4s ease; }
+        
+        /* OPTIMIZED PAGE WRAPPER: Removed transition width/height to eliminate pinch jitter */
+        .page-wrapper { transform: translateZ(0); will-change: width, height; transition: background-color 0.4s ease; }
         
         /* HARDWARE ACCELERATION & PALM REJECTION */
         .ink-layer { mix-blend-mode: multiply; touch-action: none !important; -webkit-user-drag: none; }
@@ -105,7 +107,7 @@
     <div class="app-bg-layer bg-light-layer"></div>
     <div class="app-bg-layer bg-dark-layer"></div>
 
-    <!-- Hidden Unified Upload Input -->
+    <!-- Hidden Unified Upload Input (SINGLE INSTANCE) -->
     <input type="file" id="general-upload" accept="application/pdf,image/*,.gn" class="hidden" onchange="window.handleFileUpload(event)">
 
     <!-- Drag & Drop Overlay -->
@@ -319,7 +321,7 @@
                     <button onclick="window.openPageSettingsModal()" class="p-2 md:p-3 rounded-full text-ios-text dark:text-white hover:bg-black/5 dark:hover:bg-white/10 spring-btn theme-transition" title="Change Page Settings">
                         <i data-lucide="palette" class="w-4 h-4 md:w-[20px] md:h-[20px] stroke-[2.5]"></i>
                     </button>
-                    <button onclick="window.requestAddPage()" class="p-2 md:p-3 rounded-full text-ios-text dark:text-white hover:bg-black/5 dark:hover:bg-white/10 spring-btn theme-transition hidden sm:flex" title="Add Page">
+                    <button onclick="window.requestAddPage()" class="p-2.5 md:p-3 rounded-full text-ios-text dark:text-white hover:bg-black/5 dark:hover:bg-white/10 spring-btn theme-transition hidden sm:flex" title="Add Page">
                         <i data-lucide="file-plus" class="w-4 h-4 md:w-[20px] md:h-[20px] stroke-[2.5]"></i>
                     </button>
                     <button onclick="window.openExportMenu()" class="p-2.5 md:p-3 rounded-full text-ios-text dark:text-white hover:bg-black/5 dark:hover:bg-white/10 spring-btn theme-transition" title="Export">
@@ -341,7 +343,7 @@
                     <div class="w-px h-6 md:h-8 bg-black/10 dark:bg-white/20 flex-shrink-0 theme-transition"></div>
 
                     <div class="snap-center flex items-center space-x-0.5 md:space-x-1.5 bg-black/5 dark:bg-white/10 p-1 md:p-1.5 rounded-[24px] md:rounded-[32px] flex-shrink-0 theme-transition">
-                        <button onclick="window.setTool('pan')" id="tool-pan" class="tool-btn p-2 md:p-3 w-10 md:w-[48px] flex justify-center rounded-[20px] md:rounded-[24px] spring-btn text-gray-500 theme-transition" title="Pan Mode">
+                        <button onclick="window.setTool('pan')" id="tool-pan" class="tool-btn p-2 md:p-3 w-10 md:w-[48px] flex justify-center rounded-[20px] md:rounded-[24px] spring-btn text-gray-500 theme-transition" title="Pan Mode (Drag/Resize Images)">
                             <i data-lucide="hand" class="w-5 h-5 md:w-6 md:h-6 stroke-[2]"></i>
                         </button>
                         <div class="w-px h-4 md:h-6 bg-black/10 dark:bg-white/10 theme-transition"></div>
@@ -355,7 +357,7 @@
                             <i data-lucide="ruler" class="w-5 h-5 md:w-6 md:h-6 stroke-[2]"></i>
                         </button>
                         <div class="w-px h-4 md:h-6 bg-black/10 dark:bg-white/10 theme-transition hidden sm:block"></div>
-                        <button onclick="window.setTool('eraser')" id="tool-eraser" class="tool-btn p-2 md:p-3 w-10 md:w-[48px] flex justify-center rounded-[20px] md:rounded-[24px] spring-btn text-gray-500 theme-transition" title="Eraser (Destructive Layer Erase)">
+                        <button onclick="window.setTool('eraser')" id="tool-eraser" class="tool-btn p-2 md:p-3 w-10 md:w-[48px] flex justify-center rounded-[20px] md:rounded-[24px] spring-btn text-gray-500 theme-transition" title="Eraser">
                             <i data-lucide="eraser" class="w-5 h-5 md:w-6 md:h-6 stroke-[2]"></i>
                         </button>
                         <button onclick="window.setTool('laser')" id="tool-laser" class="tool-btn p-2 md:p-3 w-10 md:w-[48px] flex justify-center rounded-[20px] md:rounded-[24px] spring-btn text-gray-500 hidden sm:flex theme-transition" title="Laser Pointer">
@@ -417,7 +419,7 @@
         </div>
     </div>
 
-    <!-- MAIN JAVASCRIPT ENGINE (100% Offline IndexedDB + PDFjs + 60Hz A16 Optimized WebGL Ink) -->
+    <!-- MAIN JAVASCRIPT ENGINE -->
     <script>
         // --- 100% Offline Local Storage Engine (IndexedDB) ---
         const DB_NAME = 'GreatNotesOfflineDB';
@@ -452,7 +454,6 @@
                 request.onsuccess = () => {
                     let loaded = request.result || [];
                     
-                    // Generate Mock Data on First Launch
                     if (loaded.length === 0 && notebooks.length === 0) {
                         const mockNb1 = { 
                             id: 'nb_' + Date.now(), 
@@ -479,7 +480,6 @@
                     resolve();
                 };
                 request.onerror = () => {
-                    console.error("Local Load Error:", request.error);
                     showToast("Storage Load Error", "alert-triangle");
                     reject(request.error);
                 };
@@ -501,7 +501,6 @@
                     resolve(); 
                 };
                 request.onerror = () => { 
-                    console.error("Local Save Error:", request.error); 
                     showToast("Save failed", "alert-circle"); 
                     setSyncing(false); 
                     reject(request.error); 
@@ -564,6 +563,11 @@
         let activeSize = SIZES.pen[1];
         let customPageTheme = null; 
 
+        // --- Image Editing State ---
+        let selectedImage = null; // { pageIndex, pathIndex }
+        let imageAction = null; // 'drag' | 'resize'
+        let actionState = null; // { startX, startY, origX, origY, origW, origH }
+
         // --- Virtualization & Memory ---
         const pdfDocumentCache = new Map();
         let renderedPages = new Set();
@@ -582,7 +586,6 @@
         let shapeSnapTimeout = null;
         let hasSnapped = false;
         let laserFadeAnimId = null;
-        let isDraggingObject = null;
 
         let touchStartFingers = 0;
         let touchStartTime = 0;
@@ -638,7 +641,6 @@
             document.getElementById('sidebar').style.transform = 'translateX(-100%)';
             setView('library'); 
             
-            // Initialize Offline Database
             await initLocalDB();
             await loadNotebooksFromLocal();
         }
@@ -909,8 +911,15 @@
                     
                     page.paths.push({ tool: 'image', src: compressedData, x: (page.width - w) / 2, y: (page.height - h) / 2, w: w, h: h });
                     page.redoPaths = []; 
+                    
+                    // Select the image immediately
+                    selectedImage = { pageIndex: currentIndex, pathIndex: page.paths.length - 1 };
+                    setTool('pan');
+                    
                     saveNotebook(nb);
-                    redrawPage(currentIndex); updateUndoRedoUI(); hideLoading();
+                    redrawPage(currentIndex); 
+                    updateUndoRedoUI(); 
+                    hideLoading();
                 };
                 img.src = event.target.result;
             };
@@ -982,6 +991,7 @@
         function setupPinchToZoom() {
             const viewport = document.getElementById('canvas-viewport');
             let initialZoom = 1.0;
+            let rafId = null;
 
             viewport.addEventListener('gesturestart', (e) => {
                 e.preventDefault();
@@ -990,9 +1000,12 @@
 
             viewport.addEventListener('gesturechange', (e) => {
                 e.preventDefault();
-                let newZoom = initialZoom * e.scale;
-                newZoom = Math.max(0.5, Math.min(newZoom, 4.0));
-                setZoom(newZoom);
+                if (rafId) cancelAnimationFrame(rafId);
+                rafId = requestAnimationFrame(() => {
+                    let newZoom = initialZoom * e.scale;
+                    newZoom = Math.max(0.5, Math.min(newZoom, 4.0));
+                    setZoom(newZoom, false);
+                });
             });
 
             viewport.addEventListener('gestureend', (e) => { 
@@ -1099,6 +1112,7 @@
 
         // --- View Handlers ---
         function setView(newView) {
+            selectedImage = null; // Deselect on view change
             view = newView;
             const libView = document.getElementById('library-view');
             const docView = document.getElementById('document-view');
@@ -1121,7 +1135,7 @@
                 
                 docView.style.transform = 'translateY(0) translateZ(0)'; 
                 
-                setZoom(1.0); 
+                setZoom(1.0, false);
                 updateDocumentUI(); 
             }
         }
@@ -1545,10 +1559,10 @@
         function adjustZoom(delta) {
             let newZoom = zoomLevel + delta;
             newZoom = Math.max(0.5, Math.min(newZoom, 4.0)); 
-            setZoom(newZoom);
+            setZoom(newZoom, true);
         }
 
-        function setZoom(level) {
+        function setZoom(level, animate = false) {
             zoomLevel = level;
             document.getElementById('zoom-text').innerText = `${Math.round(zoomLevel * 100)}%`;
             
@@ -1558,6 +1572,11 @@
             nb.pages.forEach((page, index) => {
                 const wrapper = document.getElementById(`page-wrapper-${index}`);
                 if (wrapper) {
+                    if (animate) {
+                        wrapper.style.transition = 'width 0.3s cubic-bezier(0.25, 1, 0.5, 1), height 0.3s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.4s ease';
+                    } else {
+                        wrapper.style.transition = 'background-color 0.4s ease';
+                    }
                     wrapper.style.width = `${page.width * zoomLevel}px`;
                     wrapper.style.height = `${page.height * zoomLevel}px`;
                 }
@@ -1566,6 +1585,8 @@
 
         function setTool(tool) {
             currentTool = tool;
+            selectedImage = null; 
+            renderedPages.forEach(idx => redrawPage(idx)); 
             
             if (['pen', 'line', 'laser'].includes(tool)) { 
                 if (!PALETTES.pen.includes(activeColor)) activeColor = PALETTES.pen[0]; 
@@ -1935,6 +1956,50 @@
             }
 
             page.paths.forEach(path => renderPathOnContext(drawCtx, path, isExport));
+
+            // Image Edit Mode Overlay
+            if (!isExport && selectedImage && selectedImage.pageIndex === index) {
+                const p = page.paths[selectedImage.pathIndex];
+                if (p && p.tool === 'image') {
+                    drawCtx.save();
+                    
+                    // Draw Bounding Box
+                    drawCtx.strokeStyle = '#0A84FF';
+                    drawCtx.lineWidth = 2 / zoomLevel;
+                    drawCtx.setLineDash([6 / zoomLevel, 6 / zoomLevel]);
+                    drawCtx.strokeRect(p.x, p.y, p.w, p.h);
+                    drawCtx.setLineDash([]);
+                    
+                    const handleRadius = 14 / zoomLevel;
+
+                    // Resize Handle (Bottom-Right)
+                    drawCtx.fillStyle = '#FFFFFF';
+                    drawCtx.beginPath();
+                    drawCtx.arc(p.x + p.w, p.y + p.h, handleRadius, 0, Math.PI*2);
+                    drawCtx.fill();
+                    drawCtx.stroke();
+                    drawCtx.fillStyle = '#0A84FF';
+                    drawCtx.beginPath();
+                    drawCtx.arc(p.x + p.w, p.y + p.h, handleRadius * 0.5, 0, Math.PI*2);
+                    drawCtx.fill();
+
+                    // Delete Handle (Top-Left)
+                    drawCtx.fillStyle = '#FF3B30';
+                    drawCtx.beginPath();
+                    drawCtx.arc(p.x, p.y, handleRadius, 0, Math.PI*2);
+                    drawCtx.fill();
+                    drawCtx.strokeStyle = '#FFFFFF';
+                    drawCtx.lineWidth = 3 / zoomLevel;
+                    drawCtx.beginPath();
+                    drawCtx.moveTo(p.x - handleRadius*0.4, p.y - handleRadius*0.4);
+                    drawCtx.lineTo(p.x + handleRadius*0.4, p.y + handleRadius*0.4);
+                    drawCtx.moveTo(p.x + handleRadius*0.4, p.y - handleRadius*0.4);
+                    drawCtx.lineTo(p.x - handleRadius*0.4, p.y + handleRadius*0.4);
+                    drawCtx.stroke();
+
+                    drawCtx.restore();
+                }
+            }
         }
 
         function drawPaperTemplate(ctx, width, height, type, isExport = false) {
@@ -2186,22 +2251,61 @@
                     return;
                 }
                 
-                if (hitIdx !== -1 && currentTool === 'pan') {
-                    const p = page.paths[hitIdx];
-                    if (p.tool === 'image') {
-                        // Safe Dragging
-                        isDraggingObject = { index: hitIdx, startX: x, startY: y, origX: p.x, origY: p.y };
-                        currentDrawingCanvas = drawingCanvas; 
-                        document.getElementById('canvas-viewport').style.overflow = 'hidden';
+                if (currentTool === 'pan') {
+                    if (touchStartFingers >= 2) return;
+
+                    if (selectedImage && selectedImage.pageIndex === pageIndex) {
+                        const p = page.paths[selectedImage.pathIndex];
+                        if (p) {
+                            // Check delete (top-left)
+                            if (Math.hypot(x - p.x, y - p.y) < 30 / zoomLevel) {
+                                page.paths.splice(selectedImage.pathIndex, 1);
+                                selectedImage = null;
+                                saveNotebook(nb);
+                                redrawPage(pageIndex);
+                                updateUndoRedoUI();
+                                if(navigator.vibrate) navigator.vibrate(50);
+                                return;
+                            }
+                            // Check resize (bottom-right)
+                            if (Math.hypot(x - (p.x + p.w), y - (p.y + p.h)) < 30 / zoomLevel) {
+                                imageAction = 'resize';
+                                actionState = { startX: x, startY: y, origW: p.w, origH: p.h, origX: p.x, origY: p.y };
+                                document.getElementById('canvas-viewport').style.overflow = 'hidden';
+                                return;
+                            }
+                            // Check drag (inside)
+                            if (x >= p.x && x <= p.x + p.w && y >= p.y && y <= p.y + p.h) {
+                                imageAction = 'drag';
+                                actionState = { startX: x, startY: y, origX: p.x, origY: p.y };
+                                document.getElementById('canvas-viewport').style.overflow = 'hidden';
+                                return;
+                            }
+                        }
                     }
-                    return;
+
+                    // Tapped a new image?
+                    if (hitIdx !== -1) {
+                        selectedImage = { pageIndex, pathIndex: hitIdx };
+                        imageAction = 'drag'; 
+                        const p = page.paths[hitIdx];
+                        actionState = { startX: x, startY: y, origX: p.x, origY: p.y };
+                        document.getElementById('canvas-viewport').style.overflow = 'hidden';
+                        redrawPage(pageIndex);
+                        return;
+                    } else if (selectedImage) {
+                        // Tapped empty space, deselect
+                        selectedImage = null;
+                        redrawPage(pageIndex);
+                    }
+                    return; // Allow native scroll
                 }
             });
 
             let renderQueue = false;
 
             activeCanvas.addEventListener('pointerdown', (e) => {
-                if (isDraggingObject || currentTool === 'pan') return; 
+                if (currentTool === 'pan') return; 
                 if (touchStartFingers >= 2) return;
                 if (stylusOnlyMode && e.pointerType !== 'pen') return; 
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -2237,21 +2341,29 @@
 
             const processPointerMove = (e) => {
                 const coords = getCoordinates(e, activeCanvas);
+                const x = coords.x, y = coords.y;
 
-                if (currentTool === 'pan' && isDraggingObject) {
+                if (currentTool === 'pan' && selectedImage && imageAction && actionState) {
                     const nb = notebooks.find(n => n.id === activeTabId);
                     const page = nb.pages[pageIndex];
-                    const p = page.paths[isDraggingObject.index];
+                    const p = page.paths[selectedImage.pathIndex];
                     
-                    p.x = isDraggingObject.origX + ((coords.x / zoomLevel) - isDraggingObject.startX);
-                    p.y = isDraggingObject.origY + ((coords.y / zoomLevel) - isDraggingObject.startY);
-                    
+                    if (imageAction === 'drag') {
+                        p.x = actionState.origX + (x - actionState.startX);
+                        p.y = actionState.origY + (y - actionState.startY);
+                    } else if (imageAction === 'resize') {
+                        const dx = x - actionState.startX;
+                        const aspect = actionState.origW / actionState.origH;
+                        const newW = Math.max(40, actionState.origW + dx);
+                        const newH = newW / aspect;
+                        p.w = newW;
+                        p.h = newH;
+                    }
+
                     if (!renderQueue) {
                         renderQueue = true;
                         requestAnimationFrame(() => {
-                            const drawCtx = currentDrawingCanvas.getContext('2d');
-                            drawCtx.clearRect(0, 0, currentDrawingCanvas.width, currentDrawingCanvas.height);
-                            page.paths.forEach(path => renderPathOnContext(drawCtx, path));
+                            redrawPage(pageIndex);
                             renderQueue = false;
                         });
                     }
@@ -2326,10 +2438,10 @@
             };
 
             activeCanvas.addEventListener('pointermove', (e) => {
-                if (currentTool === 'pan' && !isDraggingObject) return; 
+                if (currentTool === 'pan' && !imageAction) return; 
                 if (touchStartFingers >= 2) return;
                 if (stylusOnlyMode && e.pointerType !== 'pen' && currentTool !== 'pan') return;
-                if (!isDrawing && currentTool !== 'pan' && !isDraggingObject) return;
+                if (!isDrawing && currentTool !== 'pan') return;
                 
                 if (e.getCoalescedEvents) {
                     for (let event of e.getCoalescedEvents()) {
@@ -2341,10 +2453,11 @@
             });
 
             const stopHandler = (e) => {
-                if (currentTool === 'pan' && isDraggingObject) {
+                if (currentTool === 'pan' && imageAction) {
                     const nb = notebooks.find(n => n.id === activeTabId);
                     saveNotebook(nb);
-                    isDraggingObject = null; // End Image Drag
+                    imageAction = null; 
+                    actionState = null;
                     document.getElementById('canvas-viewport').style.overflow = 'auto';
                     updateUndoRedoUI();
                     return;
